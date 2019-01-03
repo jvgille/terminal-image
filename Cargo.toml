@@ -1,0 +1,9 @@
+[package]
+name = "terminal-image"
+version = "0.1.0"
+authors = ["Joel"]
+edition = "2018"
+
+[dependencies]
+png = "^0"
+termion = "^1"
