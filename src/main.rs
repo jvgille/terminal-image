@@ -4,22 +4,12 @@ extern crate termion;
 use termion::color;
 use std::fs::File;
 
-fn set_bg(c: color::Rgb) {
-    print!("{}", color::Bg(c));
+fn set_bg(r : u8, g : u8, b : u8) {
+    print!("{}", color::Bg(color::Rgb(r, g, b)));
 }
 
-fn set_fg(c: color::Rgb) {
-    print!("{}", color::Fg(c));
-}
-
-fn to_string(b: &png::BitDepth) -> &str {
-    match b {
-        png::BitDepth::One => "1",
-        png::BitDepth::Two => "2",
-        png::BitDepth::Four => "4",
-        png::BitDepth::Eight => "8",
-        png::BitDepth::Sixteen => "16",
-    }
+fn set_fg(r : u8, g : u8, b : u8) {
+    print!("{}", color::Fg(color::Rgb(r, g, b)));
 }
 
 fn calc_downscale(info: &png::OutputInfo) -> u32 {
@@ -40,7 +30,7 @@ fn get_pixel(buf: &Vec<u8>, info: &png::OutputInfo, x: u32, y: u32) -> (u8, u8, 
 }
 
 fn sample(buf: &Vec<u8>, info: &png::OutputInfo, x: u32, y: u32, size: u32) -> (u8, u8, u8) {
-    let (mut r, mut g, mut b) : (f64, f64, f64) = (0., 0., 0.);
+    let (mut r, mut g, mut b) = (0., 0., 0.);
     for i in x..x+size {
         for j in y..y+size {
             let temp = get_pixel(&buf, &info, i, j);
@@ -73,18 +63,15 @@ fn main() {
 
     let scale = calc_downscale(&info);
 
-    println!("Bit depth: {}\nSamples: {}\nDimensions: {}x{}",
-            to_string(&info.bit_depth),
-            info.color_type.samples(),
-            info.width, info.height);
+    println!("Dimensions: {}x{}", info.width, info.height);
 
     let mut last_y = 0;
     for y in (0..info.height - 2 * scale + 1).step_by(scale as usize * 2) {
         for x in (0..info.width - scale).step_by(scale as usize) {
             let (r, g, b) = sample(&buf, &info, x, y, scale);
-            set_bg(color::Rgb(r, g, b));
+            set_bg(r, g, b);
             let (r, g, b) = sample(&buf, &info, x, y + scale, scale);
-            set_fg(color::Rgb(r, g, b));
+            set_fg(r, g, b);
             print!("▄");
         }
         println!("{}", termion::style::Reset);
@@ -95,7 +82,7 @@ fn main() {
     if last_y + scale < info.height {
         for x in (0..info.width - scale).step_by(scale as usize) {
             let (r, g, b) = sample(&buf, &info, x, last_y, scale);
-            set_fg(color::Rgb(r, g, b));
+            set_fg(r, g, b);
             print!("▀");
         }
     }
