@@ -22,15 +22,15 @@ fn to_string(b: &png::BitDepth) -> &str {
     }
 }
 
-fn calc_downscale(info: &png::OutputInfo) -> usize {
+fn calc_downscale(info: &png::OutputInfo) -> u32 {
     let (t_width, t_height) = termion::terminal_size().unwrap();
     let (t_width, t_height) = (t_width as f64, (t_height*2) as f64);
     let h_scale = (info.width as f64/t_width).ceil();
     let v_scale = (info.height as f64/t_height).ceil();
     if h_scale > v_scale {
-        h_scale as usize
+        h_scale as u32
     } else {
-        v_scale as usize
+        v_scale as u32
     }
 }
 
@@ -79,11 +79,11 @@ fn main() {
             info.width, info.height);
 
     let mut last_y = 0;
-    for y in (0..info.height - 2 * scale as u32 + 1).step_by(scale*2) {
-        for x in (0..info.width - scale as u32).step_by(scale) {
-            let (r, g, b) = sample(&buf, &info, x, y, scale as u32);
+    for y in (0..info.height - 2 * scale + 1).step_by(scale as usize * 2) {
+        for x in (0..info.width - scale).step_by(scale as usize) {
+            let (r, g, b) = sample(&buf, &info, x, y, scale);
             set_bg(color::Rgb(r, g, b));
-            let (r, g, b) = sample(&buf, &info, x, y + scale as u32, scale as u32);
+            let (r, g, b) = sample(&buf, &info, x, y + scale, scale);
             set_fg(color::Rgb(r, g, b));
             print!("▄");
         }
@@ -91,11 +91,13 @@ fn main() {
         last_y = y;
     }
 
-    for x in (0..info.width - scale as u32).step_by(scale) {
-        let y = last_y + 2 * scale as u32;
-        let (r, g, b) = sample(&buf, &info, x, y, scale as u32);
-        set_fg(color::Rgb(r, g, b));
-        print!("▀");
+    let last_y = last_y + 2 * scale;
+    if last_y + scale < info.height {
+        for x in (0..info.width - scale).step_by(scale as usize) {
+            let (r, g, b) = sample(&buf, &info, x, last_y, scale);
+            set_fg(color::Rgb(r, g, b));
+            print!("▀");
+        }
     }
 
     println!("{}", termion::style::Reset);
