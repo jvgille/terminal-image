@@ -12,6 +12,7 @@ fn set_fg(r : u8, g : u8, b : u8) {
     print!("{}", color::Fg(color::Rgb(r, g, b)));
 }
 
+// calculates the downscaling factor necessary to fit the image inside the terminal
 fn calc_downscale(image: &DynamicImage) -> u32 {
     let (t_width, t_height) = termion::terminal_size().unwrap();
     let h_scale = (image.width() as f64/t_width as f64).ceil();
@@ -23,12 +24,13 @@ fn calc_downscale(image: &DynamicImage) -> u32 {
     }
 }
 
-// gets pixel by x, y coordinate from rgba image buffer
+// gets pixel at x, y coordinate from rgba image buffer
 fn get_pixel(buf: &Vec<u8>, image: &DynamicImage, x: u32, y: u32) -> (u8, u8, u8, u8) {
     let base = ((y*image.width() + x) * 4) as usize;
     (buf[base], buf[base+1], buf[base+2], buf[base+3])
 }
 
+// samples a square of size² elements and returns the average pixel, taking alpha into account
 fn sample(buf: &Vec<u8>, image: &DynamicImage, x: u32, y: u32, size: u32) -> (u8, u8, u8) {
     let (mut r, mut g, mut b) = (0., 0., 0.);
     for i in x..x+size {
@@ -57,14 +59,14 @@ fn main() {
         std::process::exit(1);
     }
 
-    // todo need to convert, image.to_rgba()
+
     let image = image::open(&args[1]).unwrap();
-    let buf = image.raw_pixels();
+    let buf = image.to_rgba().into_raw();       // todo unnecessary keeping two images in memory
     let scale = calc_downscale(&image);
 
     println!("Dimensions: {}x{}", image.width(), image.height());
 
-    let mut last_y = 0;
+    let mut last_y = 0; // todo ugly
     for y in (0..image.height() - 2 * scale + 1).step_by(scale as usize * 2) {
         for x in (0..image.width() - scale).step_by(scale as usize) {
             let (r, g, b) = sample(&buf, &image, x, y, scale);
