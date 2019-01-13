@@ -5,5 +5,5 @@ authors = ["Joel"]
 edition = "2018"
 
 [dependencies]
-png = "^0"
+image = "^0"
 termion = "^1"
