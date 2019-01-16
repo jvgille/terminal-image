@@ -67,29 +67,19 @@ fn main() {
 
     println!("Dimensions: {}x{}", image.width(), image.height());
 
-    for row in (0..rows-1).step_by(2) {
+    for row in (0..rows).step_by(2) {
         for col in 0..cols {
             let y = row * scale;
             let x = col * scale;
             let (r, g, b) = sample(&buf, &image, x, y, scale);
-            set_bg(r, g, b);
-            let (r, g, b) = sample(&buf, &image, x, y + scale, scale);
             set_fg(r, g, b);
-            print!("▄");
+            if row != rows - 1 {
+                // the last row for images with odd number of rows does not have a background colour
+                let (r, g, b) = sample(&buf, &image, x, y + scale, scale);
+                set_bg(r, g, b);
+            }
+            print!("▀");
         }
         println!("{}", termion::style::Reset);
     }
-
-    if rows % 2 == 1 {
-        // if there is an odd amount of pixels we need one last row of upper-half blocks
-        let y = (rows-1)*scale;
-        for col in 0..cols {
-            let x = col * scale;
-            let (r, g, b) = sample(&buf, &image, x, y, scale);
-            set_fg(r, g, b);
-            print!("▀");
-        }
-    }
-
-    println!("{}", termion::style::Reset);
 }
