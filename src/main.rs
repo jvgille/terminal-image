@@ -59,16 +59,18 @@ fn main() {
         std::process::exit(1);
     }
 
-
     let image = image::open(&args[1]).unwrap();
     let buf = image.to_rgba().into_raw();       // todo unnecessary keeping two images in memory
     let scale = calc_downscale(&image);
+    let rows = image.height() / scale;
+    let cols = image.width() / scale;
 
     println!("Dimensions: {}x{}", image.width(), image.height());
 
-    let mut last_y = 0; // todo ugly
-    for y in (0..image.height() - 2 * scale + 1).step_by(scale as usize * 2) {
-        for x in (0..image.width() - scale).step_by(scale as usize) {
+    for row in (0..rows-1).step_by(2) {
+        for col in 0..cols {
+            let y = row * scale;
+            let x = col * scale;
             let (r, g, b) = sample(&buf, &image, x, y, scale);
             set_bg(r, g, b);
             let (r, g, b) = sample(&buf, &image, x, y + scale, scale);
@@ -76,13 +78,14 @@ fn main() {
             print!("▄");
         }
         println!("{}", termion::style::Reset);
-        last_y = y;
     }
 
-    let last_y = last_y + 2 * scale;
-    if last_y + scale < image.height() {
-        for x in (0..image.width() - scale).step_by(scale as usize) {
-            let (r, g, b) = sample(&buf, &image, x, last_y, scale);
+    if rows % 2 == 1 {
+        // if there is an odd amount of pixels we need one last row of upper-half blocks
+        let y = (rows-1)*scale;
+        for col in 0..cols {
+            let x = col * scale;
+            let (r, g, b) = sample(&buf, &image, x, y, scale);
             set_fg(r, g, b);
             print!("▀");
         }
